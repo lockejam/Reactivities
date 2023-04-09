@@ -28,11 +28,11 @@ namespace API.Controllers
         {
             var user = await _userManager.FindByEmailAsync(loginDto.Email);
 
-            if(user == null) return Unauthorized();
+            if (user == null) return Unauthorized();
 
             var result = await _userManager.CheckPasswordAsync(user, loginDto.Password);
 
-            if(result)
+            if (result)
             {
                 return CreateUserObject(user);
             }
@@ -44,14 +44,16 @@ namespace API.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
         {
-            if(await _userManager.Users.AnyAsync(x => x.UserName == registerDto.UserName))
+            if (await _userManager.Users.AnyAsync(x => x.Email == registerDto.Email))
             {
-                return BadRequest("UserName is already taken");
+                ModelState.AddModelError("Email", "Email taken");
+                return ValidationProblem(ModelState);
             }
 
-                        if(await _userManager.Users.AnyAsync(x => x.Email == registerDto.Email))
+            if (await _userManager.Users.AnyAsync(x => x.UserName == registerDto.UserName))
             {
-                return BadRequest("Email is already taken");
+                ModelState.AddModelError("UserName", "UserName taken");
+                return ValidationProblem(ModelState);
             }
 
             var user = new AppUser
@@ -63,7 +65,7 @@ namespace API.Controllers
 
             var result = await _userManager.CreateAsync(user, registerDto.Password);
 
-            if(result.Succeeded)
+            if (result.Succeeded)
             {
                 return CreateUserObject(user);
             }
@@ -80,7 +82,7 @@ namespace API.Controllers
             return CreateUserObject(user);
         }
 
-        
+
         private UserDto CreateUserObject(AppUser user)
         {
             return new UserDto
